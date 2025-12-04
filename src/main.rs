@@ -18,3 +18,12 @@ impl Config {
         OK(Config {query, file_path})
     }
 }
+
+fn main(){
+    let args: Vec<String> = env::args().collect();
+
+    let config=  Config::build(&args).expect("Problem occured while parsing argument");
+
+    println!("Searching for: {}", config.query);
+    println!("In file: {}", config.file_path);
+}
