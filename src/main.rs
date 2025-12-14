@@ -1,29 +1,63 @@
 use std::env;
+use std::error::Error;
+use std::fs;
 
-//struct to hold configuration
-pub struct Config{
+
+pub struct Config {
     pub query: String,
     pub file_path: String,
 }
 
 impl Config {
-    pub fn build(args: &[String]) -> Result<Config, &'static str>{
-
+    pub fn build(args: &[String]) -> Result<Config, &'static str> {
         if args.len() < 3 {
-            return Err("Not enough arguments. usage: programname, query string & filepath")
+            return Err("Not enough arguments. Usage: program <query> <file_path>");
         }
+
         let query = args[1].clone();
         let file_path = args[2].clone();
 
-        OK(Config {query, file_path})
+        Ok(Config { query, file_path })
     }
 }
 
-fn main(){
+// Main program logic
+pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+    let contents = fs::read_to_string(config.file_path)?;
+
+    for line in search(&config.query, &contents) {
+        println!("{}", line);
+    }
+
+    Ok(())
+}
+
+// Fixed search function
+fn search<'a>(query: &str, contents: &'a str) -> Vec<&'a str> {
+    let mut results = Vec::new(); 
+
+    for line in contents.lines() {
+        if line.contains(query) {
+            results.push(line); 
+        }
+    }
+
+    results 
+}
+
+fn main() {
     let args: Vec<String> = env::args().collect();
 
-    let config=  Config::build(&args).expect("Problem occured while parsing argument");
+    let config = Config::build(&args).unwrap_or_else(|err| {
+        eprintln!("Problem occurred: {}", err);
+        std::process::exit(1);
+    });
 
     println!("Searching for: {}", config.query);
     println!("In file: {}", config.file_path);
+
+    if let Err(e) = run(config) {
+        eprintln!("Application error: {}", e);
+        std::process::exit(1);
+    }
 }
